@@ -16,6 +16,7 @@ var (
 	Exit                string = "exited"
 	DefaultInfoLocation string = "/var/run/gxdocker/%s/"
 	ConfigName          string = "config.json"
+	ContainerLogFile    string = "container.log"
 )
 
 type ContainerInfo struct {
@@ -27,7 +28,7 @@ type ContainerInfo struct {
 	Status      string `json:"status"`
 }
 
-func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume string, containerName string) (*exec.Cmd, *os.File) {
 	readPipe, writePipe, err := NewPipe()
 	if err != nil {
 		logrus.Errorf("New pipe err %v", err)
@@ -43,7 +44,21 @@ func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 		cmd.Stdin = os.Stdin
 		cmd.Stderr = os.Stderr
 	}
-	fmt.Println("readPipe, ", readPipe)
+
+	dirURL := fmt.Sprintf(DefaultInfoLocation, containerName)
+	if err := os.MkdirAll(dirURL, 0622); err != nil {
+		logrus.Errorf("newparentprocess mkdir err %v", err)
+		return nil, nil
+	}
+	stdLogFilePath := dirURL + ContainerLogFile
+	stdLogFile, err := os.Create(stdLogFilePath)
+	if err != nil {
+		logrus.Errorf("create file %s err %v", stdLogFilePath, err)
+		return nil, nil
+	}
+
+	cmd.Stdout = stdLogFile
+
 	cmd.ExtraFiles = []*os.File{readPipe}
 	mntURL := "/root/mnt"
 	rootURL := "/root/"

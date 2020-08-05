@@ -52,7 +52,10 @@ func ListContainers() {
 func getContainerInfo(file os.FileInfo) (*container.ContainerInfo, error) {
 	containerName := file.Name()
 	configFileDir := fmt.Sprintf(container.DefaultInfoLocation, containerName)
-	content, err := ioutil.ReadFile(configFileDir)
+
+	configFileName := configFileDir + "config.json"
+	fmt.Println("configFileDir", configFileDir)
+	content, err := ioutil.ReadFile(configFileName)
 	if err != nil {
 		logrus.Errorf("read file err")
 		return nil, err

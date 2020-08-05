@@ -16,7 +16,7 @@ import (
 )
 
 func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume string, containerName string) {
-	parent, writePipe := container.NewParentProcess(tty, volume)
+	parent, writePipe := container.NewParentProcess(tty, volume, containerName)
 	if parent == nil {
 		logrus.Errorf("new parnet process error")
 		return
@@ -39,10 +39,10 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume str
 	fmt.Println("ggggggggggggggggggggggggggg", comArray)
 	sendInitCommand(comArray, writePipe)
 
-	if tty {
-		parent.Wait()
-		deleteContainerInfo(containerName)
-	}
+	//if tty {
+	parent.Wait()
+	deleteContainerInfo(containerName)
+	// }
 
 	mntURL := "/root/mnt/"
 	rootURL := "/root/"
@@ -96,7 +96,7 @@ func recordContainerInfo(containerPID int, commandArray []string, containerName 
 	dirUrl := fmt.Sprintf(container.DefaultInfoLocation, containerName)
 	fmt.Println("dirUrl : ", dirUrl)
 
-	if err := os.Mkdir(dirUrl, 0622); err != nil {
+	if err := os.MkdirAll(dirUrl, 0622); err != nil {
 		logrus.Errorf("mkdir err %s err %v", dirUrl, err)
 		return "", err
 	}

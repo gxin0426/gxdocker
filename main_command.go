@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gxdocker/cgroups/subsystems"
 	"gxdocker/container"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -109,6 +110,67 @@ var listCommand = cli.Command{
 	Usage: "list all con",
 	Action: func(context *cli.Context) error {
 		ListContainers()
+		return nil
+	},
+}
+
+var logCommand = cli.Command{
+	Name:  "logs",
+	Usage: "logs",
+	Action: func(context *cli.Context) error {
+		if len(context.Args()) < 1 {
+			return fmt.Errorf("please input your container name")
+		}
+		containerName := context.Args().Get(0)
+		logContainer(containerName)
+		return nil
+	},
+}
+
+var execCommand = cli.Command{
+	Name:  "exec",
+	Usage: "exec",
+	Action: func(context *cli.Context) error {
+		if os.Getenv(ENV_EXEC_PID) != "" {
+			log.Infof("pid callback pid %v", os.Getpid())
+			return nil
+		}
+		if len(context.Args()) < 2 {
+			return fmt.Errorf("missing container name or command")
+		}
+
+		containerName := context.Args().Get(0)
+		var commandArray []string
+		for _, arg := range context.Args().Tail() {
+			commandArray = append(commandArray, arg)
+		}
+		ExecContainer(containerName, commandArray)
+		return nil
+	},
+}
+
+var stopCommand = cli.Command{
+	Name:  "stop",
+	Usage: "stop",
+	Action: func(c *cli.Context) error {
+		if len(c.Args()) < 1 {
+			return fmt.Errorf("missing container name")
+		}
+		containerName := c.Args().Get(0)
+		stopContainer(containerName)
+		return nil
+	},
+}
+
+var removeCommand = cli.Command{
+	Name:  "rm",
+	Usage: "remove container",
+	Action: func(c *cli.Context) error {
+		if len(c.Args()) < 1 {
+			return fmt.Errorf("missing container name")
+		}
+		containerName := c.Args().Get(0)
+		removeContainer(containerName)
 		return nil
 	},
 }
