@@ -15,8 +15,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume string, containerName string) {
-	parent, writePipe := container.NewParentProcess(tty, volume, containerName)
+func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume string, containerName string, imageName string) {
+
+	containerID := randStringBytes(10)
+	if containerName == "" {
+		containerName = containerID
+	}
+	parent, writePipe := container.NewParentProcess(tty, volume, containerName, imageName)
 	if parent == nil {
 		logrus.Errorf("new parnet process error")
 		return
@@ -26,7 +31,7 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume str
 		fmt.Println("tttttttttttttttttttttttttttttttttttttttttttt")
 	}
 	fmt.Println("dfdffffffffffffffffffffffff", parent.Process.Pid, comArray, containerName)
-	containerName, err := recordContainerInfo(parent.Process.Pid, comArray, containerName)
+	containerName, err := recordContainerInfo(parent.Process.Pid, comArray, containerName, containerID, volume)
 	if err != nil {
 		logrus.Errorf("Record container info error %v", err)
 		return
@@ -44,11 +49,11 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume str
 	deleteContainerInfo(containerName)
 	// }
 
-	mntURL := "/root/mnt/"
-	rootURL := "/root/"
+	// mntURL := "/root/mnt/"
+	// rootURL := "/root/"
 
 	fmt.Println("delete mnt   !!!")
-	container.DeleteWorkSpace(rootURL, mntURL, volume)
+	container.DeleteWorkSpace(containerName, volume)
 
 	os.Exit(0)
 }
@@ -67,14 +72,14 @@ func deleteContainerInfo(containerId string) {
 	}
 }
 
-func recordContainerInfo(containerPID int, commandArray []string, containerName string) (string, error) {
-	id := randStringBytes(10)
+func recordContainerInfo(containerPID int, commandArray []string, containerName, id, volume string) (string, error) {
+	// id = randStringBytes(10)
 	createTime := time.Now().Format("2006-01-02 15:04:05")
 	command := strings.Join(commandArray, "")
 
-	if containerName == "" {
-		containerName = id
-	}
+	// if containerName == "" {
+	// 	containerName = id
+	// }
 
 	containerInfo := &container.ContainerInfo{
 		Id:          id,
@@ -83,6 +88,7 @@ func recordContainerInfo(containerPID int, commandArray []string, containerName 
 		Command:     command,
 		Status:      container.RUNNING,
 		Name:        containerName,
+		Volume:      volume,
 	}
 
 	jsonBytes, err := json.Marshal(containerInfo)
